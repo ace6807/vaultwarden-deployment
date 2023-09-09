@@ -27,7 +27,7 @@ Before you begin, ensure you have the following prerequisites:
 
 ```bash
 # clone the repository on your server
-git clone git@github.com:ace6807/vaultwarden-deployment
+git clone https://github.com/ace6807/vaultwarden-deployment.git
 
 # move into the repository directory
 cd vaultwarden-deployment
