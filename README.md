@@ -72,7 +72,7 @@ see [Vaultwarden Documentation](https://github.com/dani-garcia/vaultwarden/wiki/
 Run the following command to start the deployment:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Configure Vaultwarden
