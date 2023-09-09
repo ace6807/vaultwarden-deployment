@@ -1,0 +1,4 @@
+tls:
+  certificates:
+    - certFile: /etc/ssl/certs/traefik/origin.cert
+      keyFile: /etc/ssl/private/traefik/origin.key    

@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  traefik:
+    image: traefik:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik-config:/etc/traefik"
+      - "./certs:/etc/ssl/certs/traefik"
+      - "./keys:/etc/ssl/private/traefik"
+
+    labels:
+      - traefik.enable=true
+
+      # Dashboard
+      - traefik.http.middlewares.dash-redirect.redirectScheme.scheme=https
+      - traefik.http.middlewares.dash-redirect.redirectScheme.permanent=true
+
+      - traefik.http.routers.traefik-dash-router.rule=Host(`${TRAEFIK_DOMAIN}`)
+      - traefik.http.routers.traefik-dash-router.service=api@internal
+      - traefik.http.routers.traefik-dash-router.tls=true
+      - traefik.http.routers.traefik-dash-router.entrypoints=websecure
+      - traefik.http.routers.traefik-dash-router.middlewares=auth
+
+      - traefik.http.routers.traefik-dash-router-http.rule=Host(`${TRAEFIK_DOMAIN}`)
+      - traefik.http.routers.traefik-dash-router-http.entrypoints=web
+      - traefik.http.routers.traefik-dash-router-http.middlewares=dash-redirect
+      - traefik.http.routers.traefik-dash-router-http.middlewares=auth
+
+      - traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/usersfile
+
+  vaultwarden:
+    image: vaultwarden/server:latest
+    volumes:
+      - ./vaultwarden/data/:/data/
+    environment:
+      - ADMIN_TOKEN=${VW_ADMIN_TOKEN}
+    labels:
+      - traefik.enable=true
+
+      - traefik.http.middlewares.redirect-https.redirectScheme.scheme=https
+      - traefik.http.middlewares.redirect-https.redirectScheme.permanent=true
+
+      - traefik.http.routers.bitwarden-ui-https.rule=Host(`${VW_DOMAIN}`)
+      - traefik.http.routers.bitwarden-ui-https.entrypoints=websecure
+      - traefik.http.routers.bitwarden-ui-https.tls=true
+      - traefik.http.routers.bitwarden-ui-https.service=bitwarden-ui
+
+      - traefik.http.routers.bitwarden-ui-http.rule=Host(`${VW_DOMAIN}`)
+      - traefik.http.routers.bitwarden-ui-http.entrypoints=web
+      - traefik.http.routers.bitwarden-ui-http.middlewares=redirect-https
+      - traefik.http.routers.bitwarden-ui-http.service=bitwarden-ui
+
+      - traefik.http.services.bitwarden-ui.loadbalancer.server.port=80
+
+      - traefik.http.routers.bitwarden-websocket-https.rule=Host(`${VW_DOMAIN}`) && Path(`/notifications/hub`)
+      - traefik.http.routers.bitwarden-websocket-https.entrypoints=websecure
+      - traefik.http.routers.bitwarden-websocket-https.tls=true
+      - traefik.http.routers.bitwarden-websocket-https.service=bitwarden-websocket
+
+      - traefik.http.routers.bitwarden-websocket-http.rule=Host(`${VW_DOMAIN}`) && Path(`/notifications/hub`)
+      - traefik.http.routers.bitwarden-websocket-http.entrypoints=web
+      - traefik.http.routers.bitwarden-websocket-http.middlewares=redirect-https
+      - traefik.http.routers.bitwarden-websocket-http.service=bitwarden-websocket
+
+      - traefik.http.services.bitwarden-websocket.loadbalancer.server.port=3012
